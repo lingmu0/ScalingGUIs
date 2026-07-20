@@ -2,11 +2,13 @@ package spazley.scalingguis.client;
 
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import spazley.scalingguis.ScalingGUIs;
@@ -14,9 +16,15 @@ import spazley.scalingguis.client.gui.ScalingConfigScreen;
 import spazley.scalingguis.config.ConfigManager;
 import spazley.scalingguis.config.CustomScales;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.List;
+
 public final class ScaleController {
     private static int appliedScale = Integer.MIN_VALUE;
     private static boolean applying;
+    private static final ThreadLocal<Deque<ObscureTooltipResult>> OBSCURE_TOOLTIP_RESULTS =
+            ThreadLocal.withInitial(ArrayDeque::new);
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onScreenOpening(ScreenEvent.Opening event) {
@@ -49,6 +57,47 @@ public final class ScaleController {
         int tooltipFactor = calculateScaleFactor(minecraft, requested);
         double currentFactor = minecraft.getWindow().getGuiScale();
         return currentFactor <= 0.0 ? 1.0F : (float) tooltipFactor / (float) currentFactor;
+    }
+
+    public static boolean isObscureTooltipsLoaded() {
+        return ModList.get().isLoaded("obscure_tooltips");
+    }
+
+    public static void beginTooltipRender(List<ClientTooltipComponent> components) {
+        if (isObscureTooltipsLoaded()) {
+            boolean obscureTooltip = components.stream().anyMatch(component ->
+                    component.getClass().getName().equals(
+                            "dev.obscuria.tooltips.client.component.StackBuffer"));
+            OBSCURE_TOOLTIP_RESULTS.get().push(obscureTooltip
+                    ? ObscureTooltipResult.OBSCURE
+                    : ObscureTooltipResult.VANILLA);
+        }
+    }
+
+    public static void recordObscureTooltipResult(boolean handled) {
+        Deque<ObscureTooltipResult> results = OBSCURE_TOOLTIP_RESULTS.get();
+        if (results.isEmpty()) return;
+        results.pop();
+        results.push(handled ? ObscureTooltipResult.HANDLED : ObscureTooltipResult.FALLBACK);
+    }
+
+    public static boolean shouldScaleVanillaTooltip() {
+        if (!isObscureTooltipsLoaded()) return true;
+        ObscureTooltipResult result = OBSCURE_TOOLTIP_RESULTS.get().peek();
+        return result == ObscureTooltipResult.VANILLA
+                || result == ObscureTooltipResult.FALLBACK;
+    }
+
+    public static boolean shouldScaleLateVanillaTooltipFallback() {
+        return isObscureTooltipsLoaded()
+                && OBSCURE_TOOLTIP_RESULTS.get().peek() == ObscureTooltipResult.FALLBACK;
+    }
+
+    public static void endTooltipRender() {
+        if (!isObscureTooltipsLoaded()) return;
+        Deque<ObscureTooltipResult> results = OBSCURE_TOOLTIP_RESULTS.get();
+        if (!results.isEmpty()) results.pop();
+        if (results.isEmpty()) OBSCURE_TOOLTIP_RESULTS.remove();
     }
 
     private static void applyForScreen(Screen screen, boolean resizeScreen) {
@@ -114,5 +163,12 @@ public final class ScaleController {
                     Component.literal("Opened GUI: " + className), false);
         }
         if (config.persistentLog && config.loggedGuiClassNames.add(className)) ConfigManager.save();
+    }
+
+    private enum ObscureTooltipResult {
+        VANILLA,
+        OBSCURE,
+        HANDLED,
+        FALLBACK
     }
 }

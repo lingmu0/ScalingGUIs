@@ -5,6 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "GuiGraphicsMixin",
+    "GuiGraphicsTooltipPositionMixin",
+    "compat.ObscureTooltipsTooltipRendererMixin",
     "OptionsScreenMixin"
   ],
   "injectors": {
