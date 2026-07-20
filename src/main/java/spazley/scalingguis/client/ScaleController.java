@@ -1,0 +1,118 @@
+package spazley.scalingguis.client;
+
+import com.mojang.blaze3d.platform.Window;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.network.chat.Component;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import spazley.scalingguis.ScalingGUIs;
+import spazley.scalingguis.client.gui.ScalingConfigScreen;
+import spazley.scalingguis.config.ConfigManager;
+import spazley.scalingguis.config.CustomScales;
+
+public final class ScaleController {
+    private static int appliedScale = Integer.MIN_VALUE;
+    private static boolean applying;
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public void onScreenOpening(ScreenEvent.Opening event) {
+        applyForScreen(event.getNewScreen(), false);
+    }
+
+    @SubscribeEvent
+    public void onScreenInitialized(ScreenEvent.Init.Post event) {
+        Screen screen = event.getScreen();
+        recordScreen(screen);
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public void onClientTick(ClientTickEvent.Post event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (ClientKeyMappings.consumeOpenConfig() && !(minecraft.screen instanceof ScalingConfigScreen)) {
+            minecraft.setScreen(new ScalingConfigScreen(minecraft.screen));
+        }
+        applyForScreen(minecraft.screen, true);
+    }
+
+    public static void refreshCurrentScale() {
+        appliedScale = Integer.MIN_VALUE;
+        applyForScreen(Minecraft.getInstance().screen, true);
+    }
+
+    public static float tooltipScaleRatio() {
+        Minecraft minecraft = Minecraft.getInstance();
+        int requested = ConfigManager.get().resolve(ConfigManager.get().tooltipScale);
+        int tooltipFactor = calculateScaleFactor(minecraft, requested);
+        double currentFactor = minecraft.getWindow().getGuiScale();
+        return currentFactor <= 0.0 ? 1.0F : (float) tooltipFactor / (float) currentFactor;
+    }
+
+    private static void applyForScreen(Screen screen, boolean resizeScreen) {
+        if (applying) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.options == null || minecraft.getWindow() == null) return;
+
+        CustomScales config = ConfigManager.get();
+        int desired;
+        if (screen == null) {
+            desired = config.resolve(config.hudScale);
+        } else {
+            String className = screen.getClass().getName();
+            if (config.blacklistGuiClassNames.contains(className)) return;
+            desired = config.dynamicGuiScales.contains(className) && screen instanceof AbstractContainerScreen<?> container
+                    ? dynamicScale(minecraft, container)
+                    : config.screenScale(screen);
+        }
+
+        desired = Math.max(CustomScales.AUTO_SCALE,
+                Math.min(CustomScales.MAX_EXPLICIT_SCALE, desired));
+        int factor = calculateScaleFactor(minecraft, desired);
+        Window window = minecraft.getWindow();
+        if (desired == appliedScale && Math.abs(window.getGuiScale() - factor) < 0.001D) return;
+
+        applying = true;
+        try {
+            minecraft.options.guiScale().set(desired);
+            window.setGuiScale(factor);
+            appliedScale = desired;
+            if (resizeScreen && screen != null) {
+                screen.resize(minecraft, window.getGuiScaledWidth(), window.getGuiScaledHeight());
+            }
+        } finally {
+            applying = false;
+        }
+    }
+
+    private static int dynamicScale(Minecraft minecraft, AbstractContainerScreen<?> screen) {
+        Window window = minecraft.getWindow();
+        boolean forceUnicode = minecraft.options.forceUnicodeFont().get();
+        int maximum = window.calculateScale(CustomScales.AUTO_SCALE, forceUnicode);
+        for (int candidate = maximum; candidate >= 1; candidate--) {
+            int factor = window.calculateScale(candidate, forceUnicode);
+            int guiWidth = window.getWidth() / factor;
+            int guiHeight = window.getHeight() / factor;
+            if (guiWidth > screen.getXSize() && guiHeight > screen.getYSize()) return candidate;
+        }
+        return 1;
+    }
+
+    private static int calculateScaleFactor(Minecraft minecraft, int requested) {
+        return minecraft.getWindow().calculateScale(requested,
+                minecraft.options.forceUnicodeFont().get());
+    }
+
+    private static void recordScreen(Screen screen) {
+        CustomScales config = ConfigManager.get();
+        String className = screen.getClass().getName();
+        if (config.logGuiClassNames) ScalingGUIs.LOGGER.info("Opened GUI: {}", className);
+        if (config.logGuiClassNamesChat && Minecraft.getInstance().player != null) {
+            Minecraft.getInstance().player.displayClientMessage(
+                    Component.literal("Opened GUI: " + className), false);
+        }
+        if (config.persistentLog && config.loggedGuiClassNames.add(className)) ConfigManager.save();
+    }
+}

@@ -1,5 +1,14 @@
 Changelog
 
+1.21.1-2.0.0
+* Ported the mod to Minecraft 1.21.1 and NeoForge.
+* Replaced the removed Forge config GUI API with native 1.21.1 screens and widgets.
+* Reworked screen/HUD scaling around the modern window GUI scale.
+* Added a Mixin-backed tooltip scale that preserves independent tooltip sizing.
+* Preserved the legacy JSON schema and added one-time import of general `.cfg` settings.
+* Added English JSON translations and Simplified Chinese translations.
+* Added the GUI Scales button as the final Options entry and added a rebindable F9 shortcut.
+
 1.12.2-1.0.3.1
 * Bug Fix - Fixes ConcurrentModificationException (#1). Thanks to Srdjan-V.
 
