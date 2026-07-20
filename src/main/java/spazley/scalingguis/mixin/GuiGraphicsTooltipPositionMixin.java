@@ -8,9 +8,8 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArgs;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 import spazley.scalingguis.client.ScaleController;
 
 import java.util.ArrayDeque;
@@ -35,34 +34,86 @@ abstract class GuiGraphicsTooltipPositionMixin {
         scalingguis$scaledVanillaTooltips.push(false);
     }
 
-    @ModifyArgs(
+    @ModifyArg(
             method = "renderTooltipInternal",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/neoforged/neoforge/client/ClientHooks;onRenderTooltipPre(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/client/gui/GuiGraphics;IIIILjava/util/List;Lnet/minecraft/client/gui/Font;Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;)Lnet/neoforged/neoforge/client/event/RenderTooltipEvent$Pre;",
+                    target = "Lnet/minecraftforge/client/ForgeHooksClient;onRenderTooltipPre(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/client/gui/GuiGraphics;IIIILjava/util/List;Lnet/minecraft/client/gui/Font;Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;)Lnet/minecraftforge/client/event/RenderTooltipEvent$Pre;",
                     remap = false
-            )
+            ),
+            index = 2
     )
-    private void scalingguis$scaleVanillaTooltipPreEvent(Args args) {
-        if (!ScaleController.shouldScaleVanillaTooltip()) return;
-        float ratio = ScaleController.tooltipScaleRatio();
-        for (int index = 2; index <= 5; index++) {
-            args.set(index, Math.round((Integer) args.get(index) / ratio));
-        }
+    private int scalingguis$scaleVanillaTooltipMouseX(int value) {
+        return scalingguis$scaleVanillaTooltipCoordinate(value);
     }
 
-    @ModifyArgs(
+    @ModifyArg(
+            method = "renderTooltipInternal",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraftforge/client/ForgeHooksClient;onRenderTooltipPre(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/client/gui/GuiGraphics;IIIILjava/util/List;Lnet/minecraft/client/gui/Font;Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;)Lnet/minecraftforge/client/event/RenderTooltipEvent$Pre;",
+                    remap = false
+            ),
+            index = 3
+    )
+    private int scalingguis$scaleVanillaTooltipMouseY(int value) {
+        return scalingguis$scaleVanillaTooltipCoordinate(value);
+    }
+
+    @ModifyArg(
+            method = "renderTooltipInternal",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraftforge/client/ForgeHooksClient;onRenderTooltipPre(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/client/gui/GuiGraphics;IIIILjava/util/List;Lnet/minecraft/client/gui/Font;Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;)Lnet/minecraftforge/client/event/RenderTooltipEvent$Pre;",
+                    remap = false
+            ),
+            index = 4
+    )
+    private int scalingguis$scaleVanillaTooltipScreenWidth(int value) {
+        return scalingguis$scaleVanillaTooltipCoordinate(value);
+    }
+
+    @ModifyArg(
+            method = "renderTooltipInternal",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraftforge/client/ForgeHooksClient;onRenderTooltipPre(Lnet/minecraft/world/item/ItemStack;Lnet/minecraft/client/gui/GuiGraphics;IIIILjava/util/List;Lnet/minecraft/client/gui/Font;Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;)Lnet/minecraftforge/client/event/RenderTooltipEvent$Pre;",
+                    remap = false
+            ),
+            index = 5
+    )
+    private int scalingguis$scaleVanillaTooltipScreenHeight(int value) {
+        return scalingguis$scaleVanillaTooltipCoordinate(value);
+    }
+
+    @ModifyArg(
             method = "renderTooltipInternal",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;"
-            )
+            ),
+            index = 0
     )
-    private void scalingguis$scaleVanillaTooltipBounds(Args args) {
-        if (!ScaleController.shouldScaleVanillaTooltip()) return;
-        float ratio = ScaleController.tooltipScaleRatio();
-        args.set(0, Math.round((Integer) args.get(0) / ratio));
-        args.set(1, Math.round((Integer) args.get(1) / ratio));
+    private int scalingguis$scaleVanillaTooltipPositionerWidth(int value) {
+        return scalingguis$scaleVanillaTooltipCoordinate(value);
+    }
+
+    @ModifyArg(
+            method = "renderTooltipInternal",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;"
+            ),
+            index = 1
+    )
+    private int scalingguis$scaleVanillaTooltipPositionerHeight(int value) {
+        return scalingguis$scaleVanillaTooltipCoordinate(value);
+    }
+
+    @Unique
+    private static int scalingguis$scaleVanillaTooltipCoordinate(int value) {
+        if (!ScaleController.shouldScaleVanillaTooltip()) return value;
+        return Math.round(value / ScaleController.tooltipScaleRatio());
     }
 
     @Inject(

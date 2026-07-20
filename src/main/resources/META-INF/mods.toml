@@ -1,36 +1,41 @@
 modLoader="javafml"
 loaderVersion="${loader_version_range}"
 license="${mod_license}"
+clientSideOnly=true
 
 [[mods]]
 modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
-authors="Kenny Pasley (Spazley), 1.21.1 port contributors"
+authors="Kenny Pasley (Spazley), 1.20.1 port contributors"
 description='''
 Decouples screen, HUD and tooltip scales and supports per-screen scaling rules.
 '''
 
-[[mixins]]
-config="scalingguis.mixins.json"
-
 [[dependencies.${mod_id}]]
-modId="neoforge"
-type="required"
-versionRange="[${neo_version},)"
+modId="forge"
+mandatory=true
+versionRange="${forge_version_range}"
 ordering="NONE"
 side="CLIENT"
 
 [[dependencies.${mod_id}]]
 modId="minecraft"
-type="required"
+mandatory=true
 versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="CLIENT"
 
 [[dependencies.${mod_id}]]
 modId="jei"
-type="optional"
-versionRange="[19.27.0,)"
+mandatory=false
+versionRange="${jei_version_range}"
+ordering="AFTER"
+side="CLIENT"
+
+[[dependencies.${mod_id}]]
+modId="obscure_tooltips"
+mandatory=false
+versionRange="${obscure_version_range}"
 ordering="AFTER"
 side="CLIENT"

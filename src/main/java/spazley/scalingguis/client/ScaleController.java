@@ -6,11 +6,11 @@ import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import spazley.scalingguis.ScalingGUIs;
 import spazley.scalingguis.client.gui.ScalingConfigScreen;
 import spazley.scalingguis.config.ConfigManager;
@@ -38,7 +38,8 @@ public final class ScaleController {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void onClientTick(ClientTickEvent.Post event) {
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (ClientKeyMappings.consumeOpenConfig() && !(minecraft.screen instanceof ScalingConfigScreen)) {
             minecraft.setScreen(new ScalingConfigScreen(minecraft.screen));

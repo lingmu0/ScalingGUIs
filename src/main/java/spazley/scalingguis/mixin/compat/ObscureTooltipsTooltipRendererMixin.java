@@ -10,9 +10,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
-import org.spongepowered.asm.mixin.injection.ModifyArgs;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 import spazley.scalingguis.client.ScaleController;
 
 import java.util.ArrayDeque;
@@ -56,23 +54,70 @@ abstract class ObscureTooltipsTooltipRendererMixin {
         ScaleController.recordObscureTooltipResult(Boolean.TRUE.equals(callback.getReturnValue()));
     }
 
-    @ModifyArgs(
+    @ModifyArg(
             method = "render",
             at = @At(
                     value = "INVOKE",
                     target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;",
-                    remap = false
+                    remap = true
             ),
-            require = 0
+            index = 0,
+            require = 0,
+            remap = false
     )
-    private static void scalingguis$scaleObscureTooltipPosition(Args args) {
-        float ratio = ScaleController.tooltipScaleRatio();
-        if (Math.abs(ratio - 1.0F) <= 0.0001F) return;
+    private static int scalingguis$scaleObscureTooltipScreenWidth(int value) {
+        return scalingguis$scaleObscureTooltipCoordinate(value);
+    }
 
-        // screen width, screen height, mouse X and mouse Y
-        for (int index = 0; index < 4; index++) {
-            args.set(index, Math.round((Integer) args.get(index) / ratio));
-        }
+    @ModifyArg(
+            method = "render",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;",
+                    remap = true
+            ),
+            index = 1,
+            require = 0,
+            remap = false
+    )
+    private static int scalingguis$scaleObscureTooltipScreenHeight(int value) {
+        return scalingguis$scaleObscureTooltipCoordinate(value);
+    }
+
+    @ModifyArg(
+            method = "render",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;",
+                    remap = true
+            ),
+            index = 2,
+            require = 0,
+            remap = false
+    )
+    private static int scalingguis$scaleObscureTooltipMouseX(int value) {
+        return scalingguis$scaleObscureTooltipCoordinate(value);
+    }
+
+    @ModifyArg(
+            method = "render",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;positionTooltip(IIIIII)Lorg/joml/Vector2ic;",
+                    remap = true
+            ),
+            index = 3,
+            require = 0,
+            remap = false
+    )
+    private static int scalingguis$scaleObscureTooltipMouseY(int value) {
+        return scalingguis$scaleObscureTooltipCoordinate(value);
+    }
+
+    @Unique
+    private static int scalingguis$scaleObscureTooltipCoordinate(int value) {
+        float ratio = ScaleController.tooltipScaleRatio();
+        return Math.abs(ratio - 1.0F) <= 0.0001F ? value : Math.round(value / ratio);
     }
 
     @ModifyArg(

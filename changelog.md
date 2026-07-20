@@ -1,5 +1,11 @@
 Changelog
 
+1.20.1-1.0.0
+* Ported the modern ScalingGUIs implementation to Minecraft 1.20.1 Forge.
+* Switched the development toolchain to ForgeGradle 6, Gradle 8.8, and Java 17.
+* Preserved the Options-screen button, rebindable F9 shortcut, per-screen scaling, HUD scaling, and tooltip scaling.
+* Added optional compatibility for JEI 15.20 grid expansion and Obscure Tooltips 3.x whole-tooltip scaling.
+
 1.21.1-2.0.0
 * Ported the mod to Minecraft 1.21.1 and NeoForge.
 * Replaced the removed Forge config GUI API with native 1.21.1 screens and widgets.

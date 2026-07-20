@@ -1,7 +1,9 @@
 plugins {
     id 'java-library'
+    id 'idea'
     id 'maven-publish'
-    id 'net.neoforged.gradle.userdev' version '7.1.38'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
 }
 
 version = mod_version
@@ -11,65 +13,117 @@ base {
     archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+minecraft {
+    mappings channel: mapping_channel, version: mapping_version
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file("run/${name}")
+            property 'forge.logging.console.level', 'info'
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            args '--mixin.config', "${mod_id}.mixins.json"
+        }
+
+        server {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            args '--nogui'
+        }
+
+        gameTestServer {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        data {
+            workingDirectory project.file('run/data')
+            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'),
+                    '--existing', file('src/main/resources/')
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
     maven {
-        url 'https://cursemaven.com'
+        name = 'CurseMaven'
+        url = 'https://cursemaven.com'
+        content { includeGroup 'curse.maven' }
     }
     maven {
-        name = "Jared's maven"
-        url = "https://maven.blamejared.com/"
+        name = "Jared's Maven"
+        url = 'https://maven.blamejared.com/'
     }
-    maven { url 'https://www.jitpack.io' }
-}
-
-runs {
-    configureEach {
-        systemProperty 'forge.logging.console.level', 'info'
-        workingDirectory project.layout.projectDirectory.dir('run').dir(name)
-        modSource project.sourceSets.main
+    maven {
+        name = 'Sponge'
+        url = 'https://repo.spongepowered.org/repository/maven-public/'
     }
-
-    client {
-        client()
-
-        // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
-        systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
-    }
-
-    server {
-        argument '--nogui'
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
     }
 }
 
-configurations {
-    runtimeClasspath.extendsFrom localRuntime
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
 }
 
 dependencies {
-    implementation "net.neoforged:neoforge:${neo_version}"
-    //implementation "curse.maven:modern-ui-352491:6956436"
-    implementation "curse.maven:jei-238222:7420587"
-//    implementation "curse.maven:obscure-tooltips-715660:7315944"
-//    implementation "curse.maven:fragmentum-neoforge-1123977:7537083"
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+
+    // Runtime-only: the compatibility mixins remain optional for released jars.
+    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+    runtimeOnly fg.deobf("maven.modrinth:obscure-tooltips:${obscure_maven_version}")
+    runtimeOnly fg.deobf("maven.modrinth:fragmentum:${fragmentum_maven_version}")
 }
 
-tasks.withType(ProcessResources).configureEach {
+tasks.named('processResources', ProcessResources).configure {
     def replaceProperties = [
-            minecraft_version      : minecraft_version,
-            minecraft_version_range: minecraft_version_range,
-            neo_version            : neo_version,
-            loader_version_range   : loader_version_range,
-            mod_id                 : mod_id,
-            mod_name               : mod_name,
-            mod_license            : mod_license,
-            mod_version            : mod_version
+            minecraft_version       : minecraft_version,
+            minecraft_version_range : minecraft_version_range,
+            forge_version           : forge_version,
+            forge_version_range     : forge_version_range,
+            loader_version_range    : loader_version_range,
+            jei_version_range       : jei_version_range,
+            obscure_version_range   : obscure_version_range,
+            mod_id                  : mod_id,
+            mod_name                : mod_name,
+            mod_license             : mod_license,
+            mod_version             : mod_version
     ]
     inputs.properties replaceProperties
-    filesMatching('META-INF/neoforge.mods.toml') {
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
         expand replaceProperties
     }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title'      : mod_id,
+                'Specification-Vendor'     : 'Spazley and contributors',
+                'Specification-Version'    : '1',
+                'Implementation-Title'     : project.name,
+                'Implementation-Version'   : project.jar.archiveVersion,
+                'Implementation-Vendor'    : 'Spazley and contributors',
+                'Implementation-Timestamp' : new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                'MixinConfigs'             : "${mod_id}.mixins.json"
+        ])
+    }
+    finalizedBy 'reobfJar'
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -79,7 +133,7 @@ tasks.withType(JavaCompile).configureEach {
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            from components.java
+            artifact jar
         }
     }
 }

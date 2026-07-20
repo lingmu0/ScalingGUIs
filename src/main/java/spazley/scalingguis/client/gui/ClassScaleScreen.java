@@ -136,7 +136,7 @@ final class ClassScaleScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        renderBackground(graphics);
         graphics.drawCenteredString(font, title, width / 2, 13, 0xFFFFFF);
         graphics.drawCenteredString(font, Component.translatable("scalingguis.config.page", page + 1, pageCount),
                 width / 2, 24, 0xA0A0A0);

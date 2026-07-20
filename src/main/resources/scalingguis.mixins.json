@@ -2,7 +2,8 @@
   "required": true,
   "minVersion": "0.8",
   "package": "spazley.scalingguis.mixin",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "scalingguis.refmap.json",
   "client": [
     "GuiGraphicsMixin",
     "GuiGraphicsTooltipPositionMixin",
