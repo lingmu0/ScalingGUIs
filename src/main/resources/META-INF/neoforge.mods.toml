@@ -27,3 +27,10 @@ type="required"
 versionRange="${minecraft_version_range}"
 ordering="NONE"
 side="CLIENT"
+
+[[dependencies.${mod_id}]]
+modId="jei"
+type="optional"
+versionRange="[19.27.0,)"
+ordering="AFTER"
+side="CLIENT"

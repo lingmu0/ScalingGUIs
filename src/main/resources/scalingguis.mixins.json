@@ -6,6 +6,7 @@
   "client": [
     "GuiGraphicsMixin",
     "GuiGraphicsTooltipPositionMixin",
+    "compat.JeiIngredientGridMixin",
     "compat.ObscureTooltipsTooltipRendererMixin",
     "OptionsScreenMixin"
   ],
