@@ -78,8 +78,17 @@ public final class ScaleController {
     public static void recordObscureTooltipResult(boolean handled) {
         Deque<ObscureTooltipResult> results = OBSCURE_TOOLTIP_RESULTS.get();
         if (results.isEmpty()) return;
-        results.pop();
-        results.push(handled ? ObscureTooltipResult.HANDLED : ObscureTooltipResult.FALLBACK);
+        ObscureTooltipResult initial = results.pop();
+        if (handled) {
+            results.push(ObscureTooltipResult.HANDLED);
+        } else {
+            // A tooltip classified as vanilla was already scaled by the
+            // GuiGraphics HEAD hook. Only an Obscure-classified tooltip that
+            // unexpectedly falls back still needs the late vanilla scale.
+            results.push(initial == ObscureTooltipResult.OBSCURE
+                    ? ObscureTooltipResult.FALLBACK
+                    : ObscureTooltipResult.VANILLA);
+        }
     }
 
     public static boolean shouldScaleVanillaTooltip() {
