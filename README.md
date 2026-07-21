@@ -5,7 +5,7 @@ ScalingGUIs decouples the scale used by normal screens, the HUD and tooltips. It
 ## Requirements
 
 - Minecraft 1.21.1
-- NeoForge 21.1.235 or newer in the 21.1 line
+- NeoForge 21.1.233 or newer in the 21.1 line
 - Java 21
 
 ## Configuration
