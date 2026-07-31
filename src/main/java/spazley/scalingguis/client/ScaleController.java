@@ -40,6 +40,7 @@ public final class ScaleController {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        acceptVanillaScaleChange(minecraft);
         if (ClientKeyMappings.consumeOpenConfig() && !(minecraft.screen instanceof ScalingConfigScreen)) {
             minecraft.setScreen(new ScalingConfigScreen(minecraft.screen));
         }
@@ -134,6 +135,18 @@ public final class ScaleController {
         } finally {
             applying = false;
         }
+    }
+
+    private static void acceptVanillaScaleChange(Minecraft minecraft) {
+        if (applying || appliedScale == Integer.MIN_VALUE
+                || minecraft == null || minecraft.options == null) return;
+
+        int vanillaScale = minecraft.options.guiScale().get();
+        if (vanillaScale == appliedScale) return;
+
+        CustomScales config = ConfigManager.get();
+        if (config.resetBaseScalesTo(vanillaScale)) ConfigManager.save();
+        appliedScale = Integer.MIN_VALUE;
     }
 
     private static int dynamicScale(Minecraft minecraft, AbstractContainerScreen<?> screen) {
