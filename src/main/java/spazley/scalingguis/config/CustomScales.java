@@ -69,6 +69,17 @@ public final class CustomScales {
         return scale == MAIN_GUI_SCALE ? guiScale : clampExplicit(scale, guiScale);
     }
 
+    public boolean resetBaseScalesTo(int vanillaGuiScale) {
+        int normalizedScale = clampExplicit(vanillaGuiScale, AUTO_SCALE);
+        boolean changed = guiScale != normalizedScale
+                || hudScale != MAIN_GUI_SCALE
+                || tooltipScale != MAIN_GUI_SCALE;
+        guiScale = normalizedScale;
+        hudScale = MAIN_GUI_SCALE;
+        tooltipScale = MAIN_GUI_SCALE;
+        return changed;
+    }
+
     public List<String> unusedLoggedClassNames() {
         List<String> result = new ArrayList<>(loggedGuiClassNames);
         result.removeAll(customIndividualGuiScales.keySet());
