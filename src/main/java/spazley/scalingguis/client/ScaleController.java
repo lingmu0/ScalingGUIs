@@ -145,7 +145,8 @@ public final class ScaleController {
         if (vanillaScale == appliedScale) return;
 
         CustomScales config = ConfigManager.get();
-        if (config.resetBaseScalesTo(vanillaScale)) ConfigManager.save();
+        config.resetBaseScalesTo(vanillaScale);
+        ConfigManager.save();
         appliedScale = Integer.MIN_VALUE;
     }
 
