@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.OptionsScreen;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import spazley.scalingguis.client.gui.ScalingConfigScreen;
@@ -18,21 +19,44 @@ abstract class OptionsScreenMixin {
             method = "init",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/layouts/GridLayout$RowHelper;addChild(Lnet/minecraft/client/gui/layouts/LayoutElement;)Lnet/minecraft/client/gui/layouts/LayoutElement;",
-                    ordinal = 11
+                    target = "Lnet/minecraft/client/gui/layouts/GridLayout;createRowHelper(I)Lnet/minecraft/client/gui/layouts/GridLayout$RowHelper;"
             )
     )
-    private LayoutElement scalingguis$appendConfigButton(GridLayout.RowHelper rowHelper,
-                                                          LayoutElement finalVanillaButton) {
+    private GridLayout.RowHelper scalingguis$rememberRowHelper(GridLayout gridLayout, int columns) {
+        scalingguis$gridLayout = gridLayout;
+        scalingguis$rowHelper = gridLayout.createRowHelper(columns);
+        return scalingguis$rowHelper;
+    }
+
+    @Redirect(
+            method = "init",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/gui/layouts/GridLayout;arrangeElements()V"
+            )
+    )
+    private void scalingguis$appendConfigButton(GridLayout gridLayout) {
+        if (gridLayout == scalingguis$gridLayout && scalingguis$rowHelper != null) {
+            scalingguis$rowHelper.addChild(scalingguis$createConfigButton());
+        }
+        gridLayout.arrangeElements();
+    }
+
+    @Unique
+    private GridLayout scalingguis$gridLayout;
+
+    @Unique
+    private GridLayout.RowHelper scalingguis$rowHelper;
+
+    @Unique
+    private LayoutElement scalingguis$createConfigButton() {
         Screen optionsScreen = (Screen) (Object) this;
-        LayoutElement result = rowHelper.addChild(finalVanillaButton);
-        rowHelper.addChild(Button.builder(
+        return Button.builder(
                         Component.translatable("scalingguis.videosettings.button"),
                         button -> Minecraft.getInstance().setScreen(new ScalingConfigScreen(optionsScreen)))
                 .width(150)
                 .tooltip(net.minecraft.client.gui.components.Tooltip.create(
                         Component.translatable("scalingguis.videosettings.button.tooltip")))
-                .build());
-        return result;
+                .build();
     }
 }
