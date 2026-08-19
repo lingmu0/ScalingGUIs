@@ -8,7 +8,8 @@
     "GuiGraphicsTooltipPositionMixin",
     "compat.JeiIngredientGridMixin",
     "compat.ObscureTooltipsTooltipRendererMixin",
-    "OptionsScreenMixin"
+    "OptionsScreenMixin",
+    "MinecraftResizeDisplayMixin"
   ],
   "injectors": {
     "defaultRequire": 1
