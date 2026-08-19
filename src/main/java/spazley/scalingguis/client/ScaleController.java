@@ -164,8 +164,11 @@ public final class ScaleController {
     }
 
     private static int calculateScaleFactor(Minecraft minecraft, int requested) {
-        return minecraft.getWindow().calculateScale(requested,
-                minecraft.options.forceUnicodeFont().get());
+        if (requested == CustomScales.AUTO_SCALE) {
+            return minecraft.getWindow().calculateScale(requested,
+                    minecraft.options.forceUnicodeFont().get());
+        }
+        return requested;
     }
 
     private static void recordScreen(Screen screen) {
