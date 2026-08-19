@@ -22,6 +22,7 @@ import java.util.List;
 
 public final class ScaleController {
     private static int appliedScale = Integer.MIN_VALUE;
+    private static int observedVanillaScale = Integer.MIN_VALUE;
     private static boolean applying;
     private static final ThreadLocal<Deque<ObscureTooltipResult>> OBSCURE_TOOLTIP_RESULTS =
             ThreadLocal.withInitial(ArrayDeque::new);
@@ -115,6 +116,9 @@ public final class ScaleController {
         if (applying) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft == null || minecraft.options == null || minecraft.getWindow() == null) return;
+        if (observedVanillaScale == Integer.MIN_VALUE) {
+            observedVanillaScale = minecraft.options.guiScale().get();
+        }
 
         CustomScales config = ConfigManager.get();
         int desired;
@@ -136,7 +140,6 @@ public final class ScaleController {
 
         applying = true;
         try {
-            minecraft.options.guiScale().set(desired);
             window.setGuiScale(factor);
             appliedScale = desired;
             if (resizeScreen && screen != null) {
@@ -152,12 +155,23 @@ public final class ScaleController {
                 || minecraft == null || minecraft.options == null) return;
 
         int vanillaScale = minecraft.options.guiScale().get();
-        if (vanillaScale == appliedScale) return;
+        if (observedVanillaScale == Integer.MIN_VALUE) {
+            observedVanillaScale = vanillaScale;
+            return;
+        }
+        if (vanillaScale == observedVanillaScale) return;
 
         CustomScales config = ConfigManager.get();
         config.resetBaseScalesTo(vanillaScale);
         ConfigManager.save();
+        observedVanillaScale = vanillaScale;
         appliedScale = Integer.MIN_VALUE;
+    }
+
+    public static void refreshAfterVanillaResize() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.options == null || minecraft.getWindow() == null) return;
+        applyForScreen(minecraft.screen, true);
     }
 
     private static int dynamicScale(Minecraft minecraft, AbstractContainerScreen<?> screen) {
