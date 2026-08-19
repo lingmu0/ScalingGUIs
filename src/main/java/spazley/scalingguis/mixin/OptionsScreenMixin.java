@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.layouts.GridLayout;
 import net.minecraft.client.gui.layouts.LayoutElement;
+import net.minecraft.client.gui.layouts.LayoutSettings;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.OptionsScreen;
 import net.minecraft.network.chat.Component;
@@ -19,34 +20,16 @@ abstract class OptionsScreenMixin {
             method = "init",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/layouts/GridLayout;createRowHelper(I)Lnet/minecraft/client/gui/layouts/GridLayout$RowHelper;"
+                    target = "Lnet/minecraft/client/gui/layouts/GridLayout$RowHelper;addChild(Lnet/minecraft/client/gui/layouts/LayoutElement;ILnet/minecraft/client/gui/layouts/LayoutSettings;)Lnet/minecraft/client/gui/layouts/LayoutElement;"
             )
     )
-    private GridLayout.RowHelper scalingguis$rememberRowHelper(GridLayout gridLayout, int columns) {
-        scalingguis$gridLayout = gridLayout;
-        scalingguis$rowHelper = gridLayout.createRowHelper(columns);
-        return scalingguis$rowHelper;
+    private LayoutElement scalingguis$insertConfigButton(GridLayout.RowHelper rowHelper,
+                                                          LayoutElement child,
+                                                          int columnSpan,
+                                                          LayoutSettings settings) {
+        rowHelper.addChild(scalingguis$createConfigButton());
+        return rowHelper.addChild(child, columnSpan, settings);
     }
-
-    @Redirect(
-            method = "init",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/layouts/GridLayout;arrangeElements()V"
-            )
-    )
-    private void scalingguis$appendConfigButton(GridLayout gridLayout) {
-        if (gridLayout == scalingguis$gridLayout && scalingguis$rowHelper != null) {
-            scalingguis$rowHelper.addChild(scalingguis$createConfigButton());
-        }
-        gridLayout.arrangeElements();
-    }
-
-    @Unique
-    private GridLayout scalingguis$gridLayout;
-
-    @Unique
-    private GridLayout.RowHelper scalingguis$rowHelper;
 
     @Unique
     private LayoutElement scalingguis$createConfigButton() {
